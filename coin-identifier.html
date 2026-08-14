@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Silver Dollar Identifier</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #101216;
+    --panel: #1a1e25;
+    --panel-2: #22272f;
+    --border: #313842;
+    --silver: #c9ced6;
+    --silver-bright: #eef1f5;
+    --accent: #7fb4e6;
+    --gold: #d9b45b;
+    --green: #7ec98f;
+    --red: #e08585;
+    --text: #d7dbe2;
+    --muted: #8a919c;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Georgia, serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  header {
+    text-align: center;
+    padding: 36px 16px 20px;
+    background: radial-gradient(ellipse at top, #1c2230 0%, var(--bg) 70%);
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 {
+    font-size: 2rem;
+    color: var(--silver-bright);
+    letter-spacing: 0.06em;
+  }
+  header h1 .coin { font-size: 1.6rem; vertical-align: middle; }
+  header p { color: var(--muted); max-width: 640px; margin: 8px auto 0; font-size: 0.95rem; }
+  nav.tabs {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+    padding: 16px; position: sticky; top: 0; background: var(--bg); z-index: 10;
+    border-bottom: 1px solid var(--border);
+  }
+  nav.tabs button {
+    background: var(--panel); color: var(--text); border: 1px solid var(--border);
+    padding: 9px 18px; border-radius: 999px; cursor: pointer; font-size: 0.92rem;
+    transition: all .15s;
+  }
+  nav.tabs button:hover { border-color: var(--accent); }
+  nav.tabs button.active { background: var(--accent); color: #10131a; border-color: var(--accent); font-weight: 600; }
+  main { max-width: 980px; margin: 0 auto; padding: 24px 16px 80px; }
+  section.tab { display: none; }
+  section.tab.active { display: block; animation: fade .25s; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: none; } }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px 22px; margin-bottom: 18px;
+  }
+  .card h2 { color: var(--silver-bright); font-size: 1.25rem; margin-bottom: 10px; }
+  .card h3 { color: var(--accent); font-size: 1.02rem; margin: 14px 0 6px; }
+  .muted { color: var(--muted); font-size: 0.9rem; }
+  .choice-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin-top: 12px; }
+  .choice {
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px; cursor: pointer; transition: all .15s;
+  }
+  .choice:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .choice.selected { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+  .choice .title { color: var(--silver-bright); font-weight: 600; }
+  .choice .sub { color: var(--muted); font-size: 0.84rem; margin-top: 4px; }
+  .btn {
+    background: var(--accent); color: #10131a; border: none; padding: 10px 22px;
+    border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; margin-top: 14px;
+  }
+  .btn.secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  input[type=text], input[type=number], input[type=password], select {
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    padding: 9px 12px; border-radius: 8px; font-size: 0.95rem; width: 100%;
+  }
+  label { display: block; margin: 10px 0 4px; color: var(--silver); font-size: 0.9rem; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--border); }
+  th { color: var(--accent); font-weight: 600; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.78rem; margin: 2px 4px 2px 0; }
+  .badge.key { background: rgba(217,180,91,.15); color: var(--gold); border: 1px solid var(--gold); }
+  .badge.ok { background: rgba(126,201,143,.12); color: var(--green); border: 1px solid var(--green); }
+  .badge.bad { background: rgba(224,133,133,.12); color: var(--red); border: 1px solid var(--red); }
+  .result-banner {
+    background: linear-gradient(135deg, #262d3a, #1c2230); border: 1px solid var(--gold);
+    border-radius: 12px; padding: 20px; margin-bottom: 18px;
+  }
+  .result-banner h2 { color: var(--gold); }
+  .spec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-top: 10px; }
+  .spec { background: var(--panel-2); border-radius: 8px; padding: 10px; }
+  .spec .k { color: var(--muted); font-size: 0.76rem; text-transform: uppercase; letter-spacing: .05em; }
+  .spec .v { color: var(--silver-bright); font-weight: 600; }
+  .drop {
+    border: 2px dashed var(--border); border-radius: 12px; padding: 34px; text-align: center;
+    cursor: pointer; transition: border-color .15s; color: var(--muted);
+  }
+  .drop:hover, .drop.over { border-color: var(--accent); color: var(--text); }
+  .drop img { max-width: 100%; max-height: 320px; border-radius: 8px; }
+  .steps { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+  .step-dot { flex: 1; min-width: 60px; height: 5px; border-radius: 3px; background: var(--panel-2); }
+  .step-dot.done { background: var(--accent); }
+  pre.airesult { white-space: pre-wrap; font-family: inherit; background: var(--panel-2); border-radius: 8px; padding: 14px; margin-top: 12px; }
+  .check-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .check-row > div:first-child { flex: 1 1 260px; }
+  .verdict { font-size: 1.1rem; font-weight: 700; margin-top: 14px; }
+  details { margin-top: 8px; }
+  summary { cursor: pointer; color: var(--accent); }
+  footer { text-align: center; color: var(--muted); font-size: 0.8rem; padding: 20px; border-top: 1px solid var(--border); }
+  @media (max-width: 600px) { header h1 { font-size: 1.4rem; } }
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="coin">🪙</span> Silver Dollar Identifier</h1>
+  <p>Accurately identify and attribute U.S. silver dollars — Flowing Hair through the American Silver Eagle. Guided identification, full series reference, authenticity testing, and optional AI photo analysis.</p>
+</header>
+
+<nav class="tabs">
+  <button class="active" data-tab="wizard">Identify My Coin</button>
+  <button data-tab="photo">Photo ID (AI)</button>
+  <button data-tab="reference">Series Reference</button>
+  <button data-tab="authenticity">Authenticity Check</button>
+  <button data-tab="mintmarks">Mint Marks</button>
+</nav>
+
+<main>
+
+<!-- ============ WIZARD ============ -->
+<section class="tab active" id="tab-wizard">
+  <div class="steps" id="wizSteps"></div>
+  <div id="wizBody"></div>
+</section>
+
+<!-- ============ PHOTO AI ============ -->
+<section class="tab" id="tab-photo">
+  <div class="card">
+    <h2>AI Photo Identification</h2>
+    <p class="muted">Upload a clear, well-lit photo of the coin's obverse (front). For best accuracy also add the reverse. Analysis uses the Claude vision API — your image is sent directly from your browser to Anthropic and requires your own API key (stored only in this browser).</p>
+    <label>Anthropic API key</label>
+    <input type="password" id="apiKey" placeholder="sk-ant-...">
+    <div class="choice-grid" style="margin-top:14px">
+      <div>
+        <label>Obverse (front)</label>
+        <div class="drop" id="dropObv">Click or drop image here</div>
+        <input type="file" id="fileObv" accept="image/*" hidden>
+      </div>
+      <div>
+        <label>Reverse (back) — optional</label>
+        <div class="drop" id="dropRev">Click or drop image here</div>
+        <input type="file" id="fileRev" accept="image/*" hidden>
+      </div>
+    </div>
+    <button class="btn" id="analyzeBtn" disabled>Analyze Coin</button>
+    <div id="aiOut"></div>
+  </div>
+</section>
+
+<!-- ============ REFERENCE ============ -->
+<section class="tab" id="tab-reference">
+  <div class="card">
+    <h2>U.S. Silver Dollar Series</h2>
+    <p class="muted">Every circulating and bullion U.S. dollar coin struck in silver. Click a series for full details, specifications, mintages, and key dates.</p>
+    <div class="choice-grid" id="refGrid"></div>
+  </div>
+  <div id="refDetail"></div>
+</section>
+
+<!-- ============ AUTHENTICITY ============ -->
+<section class="tab" id="tab-authenticity">
+  <div class="card">
+    <h2>Authenticity Checker</h2>
+    <p class="muted">Counterfeit silver dollars (especially Morgans and Trade dollars) are extremely common. Enter measurements to compare against official U.S. Mint specifications. You'll need a scale accurate to 0.1 g and calipers.</p>
+    <label>Series</label>
+    <select id="authSeries"></select>
+    <label>Weight (grams)</label>
+    <input type="number" id="authWeight" step="0.01" placeholder="e.g. 26.73">
+    <label>Diameter (mm)</label>
+    <input type="number" id="authDiameter" step="0.01" placeholder="e.g. 38.1">
+    <div class="check-row">
+      <div>Does a magnet stick to the coin? <span class="muted">(Silver is never magnetic — any attraction means counterfeit)</span></div>
+      <select id="authMagnet" style="width:auto"><option value="">—</option><option value="no">No</option><option value="yes">Yes</option></select>
+    </div>
+    <div class="check-row">
+      <div>Edge type <span class="muted">(All classic silver dollars have a reeded edge; Silver Eagles too)</span></div>
+      <select id="authEdge" style="width:auto"><option value="">—</option><option value="reeded">Reeded</option><option value="plain">Plain / smooth</option><option value="lettered">Lettered</option></select>
+    </div>
+    <div class="check-row">
+      <div>Ping test: does it ring with a long, high-pitched tone when balanced on a fingertip and tapped?</div>
+      <select id="authPing" style="width:auto"><option value="">—</option><option value="yes">Yes, long ring</option><option value="no">Dull thud</option></select>
+    </div>
+    <button class="btn" id="authBtn">Evaluate</button>
+    <div id="authOut"></div>
+  </div>
+</section>
+
+<!-- ============ MINT MARKS ============ -->
+<section class="tab" id="tab-mintmarks">
+  <div class="card">
+    <h2>Mint Mark Locations</h2>
+    <table>
+      <tr><th>Series</th><th>Location</th><th>Marks used</th></tr>
+      <tr><td>Morgan (1878–1921)</td><td>Reverse, below the wreath bow, above "DO" in DOLLAR</td><td>none (Philadelphia), CC, O, S, D (1921 only)</td></tr>
+      <tr><td>Peace (1921–1935)</td><td>Reverse, lower left, below ONE and left of the eagle's wing tip</td><td>none, D, S</td></tr>
+      <tr><td>Trade (1873–1885)</td><td>Reverse, above the D in DOLLAR</td><td>none, CC, S</td></tr>
+      <tr><td>Seated Liberty (1840–1873)</td><td>Reverse, below the eagle</td><td>none, O, S, CC</td></tr>
+      <tr><td>Gobrecht (1836–1839)</td><td>None (all Philadelphia)</td><td>—</td></tr>
+      <tr><td>Draped Bust / Flowing Hair (1794–1804)</td><td>None (all Philadelphia)</td><td>—</td></tr>
+      <tr><td>Eisenhower silver (1971–1976)</td><td>Obverse, below the neck</td><td>S (silver-clad issues only)</td></tr>
+      <tr><td>American Silver Eagle (1986– )</td><td>Reverse, varies by design (left of eagle / below)</td><td>none, S, W, P (proof/burnished issues)</td></tr>
+    </table>
+    <h3>Mint mark key</h3>
+    <p class="muted">CC = Carson City &nbsp;•&nbsp; O = New Orleans &nbsp;•&nbsp; S = San Francisco &nbsp;•&nbsp; D = Denver &nbsp;•&nbsp; W = West Point &nbsp;•&nbsp; P / none = Philadelphia</p>
+    <h3>Tips for accurate reading</h3>
+    <p class="muted">Use a 5–10× loupe under angled light. On Morgans, the mint mark is tiny (~1 mm) — beware added or altered mint marks on key dates like 1889-CC and 1893-S. On an authentic 1893-S, the date's "1" aligns with a denticle and the S is level; added mint marks often show a seam or wrong position.</p>
+  </div>
+</section>
+
+</main>
+<footer>Reference data compiled from U.S. Mint specifications and standard numismatic references (Red Book, VAMworld). Estimated values vary with condition and market — for high-value coins, seek professional grading (PCGS / NGC).</footer>
+
+<script>
+// ==================== SERIES DATABASE ====================
+const SERIES = [
+  {
+    id: 'morgan', name: 'Morgan Dollar', years: '1878–1921',
+    obverse: 'Liberty head facing left wearing a cap with "LIBERTY" on the band, surrounded by "E PLURIBUS UNUM", stars, and the date.',
+    reverse: 'Eagle with outstretched wings clutching arrows and olive branch, wreath below, "IN GOD WE TRUST" in Gothic letters above.',
+    designer: 'George T. Morgan',
+    specs: { weight: 26.73, tol: 0.097, diameter: 38.1, dtol: 0.1, composition: '90% silver, 10% copper', asw: '0.7734 oz', edge: 'Reeded' },
+    mints: 'Philadelphia (none), Carson City (CC), New Orleans (O), San Francisco (S), Denver (D, 1921 only)',
+    keyDates: [
+      { date: '1878-CC', note: 'First-year Carson City, popular' },
+      { date: '1879-CC', note: 'Scarce; "capped CC" variety' },
+      { date: '1889-CC', note: 'KEY — rarest CC Morgan (350,000 minted)' },
+      { date: '1893-S', note: 'KEY — rarest circulation Morgan (100,000 minted)' },
+      { date: '1894', note: 'Key Philadelphia date (110,000)' },
+      { date: '1895', note: '"King of Morgans" — proof-only (880 known)' },
+      { date: '1895-O / 1895-S', note: 'Semi-keys' },
+      { date: '1903-O', note: 'Formerly rare; bags released 1962' },
+    ],
+    varieties: 'Hundreds of VAM die varieties. Famous: 1878 8TF/7TF tail feathers, 1888-O "Hot Lips", 1900-O/CC overmintmark. Check tail feather count (7 or 8) on 1878.',
+    id_tips: 'Distinguish from Peace dollar: Morgan Liberty wears a cap and the reverse eagle has folded-tip wings inside a wreath. The word LIBERTY appears on the headband, not in the field.'
+  },
+  {
+    id: 'peace', name: 'Peace Dollar', years: '1921–1935 (also 2021– modern restrikes)',
+    obverse: 'Liberty head facing left with radiant spiked crown (like the Statue of Liberty), "LIBERTY" across the top, date below.',
+    reverse: 'Perched bald eagle facing right on a rock inscribed "PEACE", rays of sunlight behind.',
+    designer: 'Anthony de Francisci',
+    specs: { weight: 26.73, tol: 0.097, diameter: 38.1, dtol: 0.1, composition: '90% silver, 10% copper', asw: '0.7734 oz', edge: 'Reeded' },
+    mints: 'Philadelphia (none), Denver (D), San Francisco (S)',
+    keyDates: [
+      { date: '1921', note: 'KEY — high relief, one year only (1,006,473)' },
+      { date: '1928', note: 'KEY — lowest circulation mintage (360,649)' },
+      { date: '1934-S', note: 'Condition rarity in high grades' },
+      { date: '1927-D / 1927-S', note: 'Semi-keys' },
+    ],
+    varieties: '1922 high-relief pattern (extremely rare), various VAMs incl. 1922 "Ear Ring", 1934-D doubled die obverse.',
+    id_tips: 'The radiant crown is the giveaway — no other U.S. dollar has it. 1921 issues have noticeably higher relief (center wear appears fast).'
+  },
+  {
+    id: 'trade', name: 'Trade Dollar', years: '1873–1885',
+    obverse: 'Liberty seated on merchandise bales facing left toward the sea, holding an olive branch; "IN GOD WE TRUST" on base.',
+    reverse: 'Eagle with arrows and olive branch; "420 GRAINS, 900 FINE." inscribed below — unique to this series.',
+    designer: 'William Barber',
+    specs: { weight: 27.22, tol: 0.097, diameter: 38.1, dtol: 0.1, composition: '90% silver, 10% copper', asw: '0.7874 oz', edge: 'Reeded' },
+    mints: 'Philadelphia (none), Carson City (CC), San Francisco (S)',
+    keyDates: [
+      { date: '1878-CC', note: 'KEY — 97,000 minted, many melted' },
+      { date: '1884', note: 'Proof-only, 10 known' },
+      { date: '1885', note: 'Proof-only, 5 known — extreme rarity' },
+    ],
+    varieties: 'Many carry Asian "chopmarks" (merchant test punches) — collectible, not damage in the usual sense. HEAVILY counterfeited; weigh every example (27.22 g, heavier than a Morgan).',
+    id_tips: 'The words "420 GRAINS, 900 FINE" on the reverse instantly identify a Trade dollar. Slightly heavier than other dollars.'
+  },
+  {
+    id: 'seated', name: 'Seated Liberty Dollar', years: '1840–1873',
+    obverse: 'Liberty seated on a rock holding a shield and pole with liberty cap, 13 stars around, date below.',
+    reverse: 'Eagle with shield on breast, "UNITED STATES OF AMERICA" and "ONE DOL." around; "IN GOD WE TRUST" ribbon added 1866.',
+    designer: 'Christian Gobrecht',
+    specs: { weight: 26.73, tol: 0.097, diameter: 38.1, dtol: 0.1, composition: '90% silver, 10% copper', asw: '0.7734 oz', edge: 'Reeded' },
+    mints: 'Philadelphia (none), New Orleans (O), San Francisco (S), Carson City (CC)',
+    keyDates: [
+      { date: '1851 / 1852', note: 'KEYS — tiny mintages (1,300 / 1,100)' },
+      { date: '1858', note: 'Proof-only' },
+      { date: '1870-S', note: 'Legendary rarity (~12 known)' },
+      { date: '1871-CC / 1872-CC / 1873-CC', note: 'Rare Carson City issues' },
+    ],
+    varieties: 'No Motto (1840–1865) vs. With Motto "IN GOD WE TRUST" (1866–1873) — check the reverse ribbon.',
+    id_tips: 'Seated figure of Liberty distinguishes it from all bust-type dollars. Same size as a Morgan.'
+  },
+  {
+    id: 'gobrecht', name: 'Gobrecht Dollar', years: '1836–1839',
+    obverse: 'Seated Liberty (no stars on 1836 obverse), name "C. GOBRECHT F." on base of some issues.',
+    reverse: 'Flying eagle amid a field of stars (star placement varies by issue).',
+    designer: 'Christian Gobrecht',
+    specs: { weight: 26.73, tol: 0.1, diameter: 38.1, dtol: 0.5, composition: '90% silver, 10% copper (1837 standard; 1836 issues 89.24%)', asw: '~0.773 oz', edge: 'Plain or reeded depending on issue' },
+    mints: 'Philadelphia only',
+    keyDates: [ { date: 'All', note: 'All Gobrecht dollars are rare (about 1,900 originals); many restrikes exist' } ],
+    varieties: 'Originals vs. later restrikes distinguished by die alignment and eagle orientation — professional authentication essential.',
+    id_tips: 'Flying eagle reverse with stars is unique among dollars. If you think you have one, get it authenticated — value starts around five figures.'
+  },
+  {
+    id: 'draped', name: 'Draped Bust Dollar', years: '1795–1804',
+    obverse: 'Bust of Liberty facing right with flowing hair tied with ribbon, drapery at the bust.',
+    reverse: 'Small eagle in wreath (1795–1798) or heraldic eagle with shield (1798–1804).',
+    designer: 'Robert Scot',
+    specs: { weight: 26.96, tol: 0.5, diameter: 39.5, dtol: 1.0, composition: '89.24% silver, 10.76% copper', asw: '0.7737 oz', edge: 'Lettered: "HUNDRED CENTS ONE DOLLAR OR UNIT"' },
+    mints: 'Philadelphia only',
+    keyDates: [
+      { date: '1804', note: '"King of American Coins" — 15 known, all later strikes. Any 1804 dollar encountered is almost certainly counterfeit.' },
+      { date: '1799', note: 'Most available date' },
+    ],
+    varieties: 'Small Eagle vs. Heraldic Eagle reverse; many die varieties (BB/Bolender numbers).',
+    id_tips: 'Slightly larger and lighter standard than a Morgan, with a LETTERED edge — no reeding. A reeded-edge "Draped Bust dollar" is fake.'
+  },
+  {
+    id: 'flowing', name: 'Flowing Hair Dollar', years: '1794–1795',
+    obverse: 'Liberty head facing right with unbound flowing hair, 15 stars, date below.',
+    reverse: 'Small eagle within a wreath, "UNITED STATES OF AMERICA" around.',
+    designer: 'Robert Scot',
+    specs: { weight: 26.96, tol: 0.5, diameter: 39.5, dtol: 1.0, composition: '89.24% silver, 10.76% copper', asw: '0.7737 oz', edge: 'Lettered: "HUNDRED CENTS ONE DOLLAR OR UNIT"' },
+    mints: 'Philadelphia only',
+    keyDates: [
+      { date: '1794', note: 'First U.S. silver dollar — ~140 survive; a specimen sold for $10 million' },
+      { date: '1795', note: '160,295 minted' },
+    ],
+    varieties: 'Two-leaves vs. three-leaves reverse (1795).',
+    id_tips: 'Extremely valuable and extremely counterfeited. Lettered edge, hair flows free with no ribbon. Authenticate professionally.'
+  },
+  {
+    id: 'ike', name: 'Eisenhower Dollar (silver issues)', years: '1971–1976 (S mint 40% silver only)',
+    obverse: 'Portrait of Dwight D. Eisenhower facing left, date below.',
+    reverse: 'Eagle landing on the Moon (Apollo 11 insignia); 1976 Bicentennial shows Liberty Bell and Moon.',
+    designer: 'Frank Gasparro',
+    specs: { weight: 24.59, tol: 0.3, diameter: 38.1, dtol: 0.1, composition: '40% silver (outer .800 Ag clad on .209 Ag core) — S mint collector issues only', asw: '0.3161 oz', edge: 'Reeded' },
+    mints: 'San Francisco (S) for silver issues; P and D issues are copper-nickel, NOT silver',
+    keyDates: [
+      { date: '1971-S / 1972-S "Blue & Brown Ikes"', note: '40% silver uncirculated and proof' },
+      { date: '1973-S / 1974-S / 1976-S silver', note: '40% silver collector issues' },
+    ],
+    varieties: '1972 Type 1/2/3 reverse earth varieties (clad); 1976 Type 1 vs Type 2 lettering.',
+    id_tips: 'Only S-mint Ikes sold in blue envelopes / brown boxes are silver. Silver ones weigh 24.59 g vs 22.68 g clad, and the edge shows no copper stripe.'
+  },
+  {
+    id: 'ase', name: 'American Silver Eagle', years: '1986–present',
+    obverse: 'Adolph Weinman\'s Walking Liberty design, "LIBERTY", date.',
+    reverse: 'Heraldic eagle (1986–2021 Type 1) or eagle landing with oak branch (2021– Type 2); "1 OZ. FINE SILVER ~ ONE DOLLAR".',
+    designer: 'Adolph A. Weinman (obv), John Mercanti / Emily Damstra (rev)',
+    specs: { weight: 31.101, tol: 0.15, diameter: 40.6, dtol: 0.1, composition: '99.9% fine silver', asw: '1.000 oz', edge: 'Reeded' },
+    mints: 'None (bullion), S, W, P (collector strikes)',
+    keyDates: [
+      { date: '1995-W proof', note: 'KEY — 30,125 minted' },
+      { date: '2019-S Enhanced Reverse Proof', note: 'Just 29,909' },
+      { date: '2021', note: 'Type 1 / Type 2 transition year' },
+    ],
+    varieties: '2008-W reverse of 2007 variety.',
+    id_tips: 'Larger (40.6 mm) and heavier (31.1 g) than classic dollars, marked "1 OZ. FINE SILVER". Widely counterfeited — weigh and measure; fakes are often the correct diameter but wrong weight or magnetic.'
+  }
+];
+
+// ==================== TABS ====================
+document.querySelectorAll('nav.tabs button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('nav.tabs button').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('section.tab').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  document.getElementById('tab-' + b.dataset.tab).classList.add('active');
+}));
+
+// ==================== WIZARD ====================
+const wiz = { step: 0, answers: {} };
+const wizSteps = ['Design', 'Details', 'Date & Mint', 'Result'];
+
+function renderSteps() {
+  document.getElementById('wizSteps').innerHTML = wizSteps.map((s, i) =>
+    `<div class="step-dot ${i <= wiz.step ? 'done' : ''}" title="${s}"></div>`).join('');
+}
+
+function wizChoice(items, key, next) {
+  return `<div class="choice-grid">` + items.map(it =>
+    `<div class="choice" onclick="wizPick('${key}','${it.v}',${next})">
+      <div class="title">${it.t}</div><div class="sub">${it.s || ''}</div></div>`).join('') + `</div>`;
+}
+
+function renderWizard() {
+  renderSteps();
+  const body = document.getElementById('wizBody');
+  if (wiz.step === 0) {
+    body.innerHTML = `<div class="card"><h2>Step 1 — What's on the front (obverse)?</h2>
+      <p class="muted">Look at the main design on the "heads" side.</p>` +
+      wizChoice([
+        { v: 'cap', t: 'Woman\'s head with a cap, "LIBERTY" on the headband', s: 'Cotton and wheat in her hair → Morgan' },
+        { v: 'rays', t: 'Woman\'s head with a spiked / radiant crown', s: 'Like the Statue of Liberty → Peace' },
+        { v: 'seated', t: 'Woman seated (on a rock or on bales)', s: 'Seated Liberty, Trade, or Gobrecht' },
+        { v: 'bust', t: 'Bust of a woman with flowing hair, facing right', s: 'Draped Bust or Flowing Hair (1794–1804)' },
+        { v: 'walking', t: 'Woman walking toward the sun with a flag drape', s: 'American Silver Eagle' },
+        { v: 'ike', t: 'Portrait of a man (Eisenhower)', s: 'Eisenhower dollar' },
+      ], 'design', 1) + `</div>`;
+  } else if (wiz.step === 1) {
+    const d = wiz.answers.design;
+    if (d === 'seated') {
+      body.innerHTML = `<div class="card"><h2>Step 2 — Narrow it down</h2>` +
+        wizChoice([
+          { v: 'trade', t: 'Reverse says "420 GRAINS, 900 FINE"', s: 'Liberty sits on bales facing the sea → Trade Dollar' },
+          { v: 'seated', t: 'Eagle with shield on reverse, "ONE DOL."', s: '→ Seated Liberty Dollar' },
+          { v: 'gobrecht', t: 'FLYING eagle on reverse, possibly with stars', s: '→ Gobrecht Dollar (rare!)' },
+        ], 'series', 2) + `</div>`;
+    } else if (d === 'bust') {
+      body.innerHTML = `<div class="card"><h2>Step 2 — Narrow it down</h2>
+        <p class="muted">Check the hair and edge. These coins have LETTERED edges (words, not ridges).</p>` +
+        wizChoice([
+          { v: 'draped', t: 'Hair tied with a ribbon, drapery at bust', s: 'Dated 1795–1804 → Draped Bust' },
+          { v: 'flowing', t: 'Hair completely loose and flowing, no ribbon', s: 'Dated 1794–1795 → Flowing Hair' },
+        ], 'series', 2) + `</div>`;
+    } else {
+      const map = { cap: 'morgan', rays: 'peace', walking: 'ase', ike: 'ike' };
+      wiz.answers.series = map[d];
+      wiz.step = 2; renderWizard(); return;
+    }
+  } else if (wiz.step === 2) {
+    const s = SERIES.find(x => x.id === wiz.answers.series);
+    body.innerHTML = `<div class="card"><h2>Step 3 — Date and mint mark</h2>
+      <p class="muted">Series identified: <b style="color:var(--gold)">${s.name}</b> (${s.years}).
+      Mint mark location: check the Mint Marks tab. ${s.mints ? 'Possible marks: ' + s.mints + '.' : ''}</p>
+      <label>Date on coin</label><input type="text" id="wizDate" placeholder="e.g. 1889">
+      <label>Mint mark (leave blank if none)</label><input type="text" id="wizMM" placeholder="e.g. CC, O, S, D, W">
+      <button class="btn" onclick="wizFinish()">Identify</button>
+      <button class="btn secondary" onclick="wizReset()">Start over</button></div>`;
+  } else {
+    const s = SERIES.find(x => x.id === wiz.answers.series);
+    const date = (wiz.answers.date || '').trim();
+    const mm = (wiz.answers.mm || '').trim().toUpperCase();
+    const full = date + (mm ? '-' + mm : '');
+    const keyHit = s.keyDates.filter(k => full && k.date.toUpperCase().includes(full.toUpperCase()));
+    body.innerHTML = `<div class="result-banner"><h2>✦ ${full ? full + ' ' : ''}${s.name}</h2>
+      <p>${s.obverse}</p>
+      ${keyHit.length ? keyHit.map(k => `<p style="margin-top:8px"><span class="badge key">NOTABLE DATE</span> ${k.date}: ${k.note}</p>`).join('') : (date ? '<p class="muted" style="margin-top:8px">This date is not among the major keys — but check varieties below and always verify authenticity.</p>' : '')}
+      </div>` + seriesDetailHTML(s) +
+      `<button class="btn secondary" onclick="wizReset()">Identify another coin</button>
+       <button class="btn" onclick="document.querySelector('[data-tab=authenticity]').click(); document.getElementById('authSeries').value='${s.id}';">Verify authenticity →</button>`;
+  }
+}
+window.wizPick = (key, val, next) => { wiz.answers[key] = val; wiz.step = next; renderWizard(); };
+window.wizFinish = () => {
+  wiz.answers.date = document.getElementById('wizDate').value;
+  wiz.answers.mm = document.getElementById('wizMM').value;
+  wiz.step = 3; renderWizard();
+};
+window.wizReset = () => { wiz.step = 0; wiz.answers = {}; renderWizard(); };
+renderWizard();
+
+// ==================== REFERENCE ====================
+function seriesDetailHTML(s) {
+  return `<div class="card"><h2>${s.name} <span class="muted" style="font-size:.85rem">${s.years}</span></h2>
+    <h3>Design</h3>
+    <p><b>Obverse:</b> ${s.obverse}</p><p><b>Reverse:</b> ${s.reverse}</p>
+    <p class="muted">Designer: ${s.designer}</p>
+    <h3>Specifications</h3>
+    <div class="spec-grid">
+      <div class="spec"><div class="k">Weight</div><div class="v">${s.specs.weight} g</div></div>
+      <div class="spec"><div class="k">Diameter</div><div class="v">${s.specs.diameter} mm</div></div>
+      <div class="spec"><div class="k">Composition</div><div class="v">${s.specs.composition}</div></div>
+      <div class="spec"><div class="k">Silver content</div><div class="v">${s.specs.asw}</div></div>
+      <div class="spec"><div class="k">Edge</div><div class="v">${s.specs.edge}</div></div>
+      <div class="spec"><div class="k">Mints</div><div class="v" style="font-size:.85rem">${s.mints}</div></div>
+    </div>
+    <h3>Key & notable dates</h3>
+    <table>${s.keyDates.map(k => `<tr><td style="white-space:nowrap"><b>${k.date}</b></td><td>${k.note}</td></tr>`).join('')}</table>
+    <h3>Varieties</h3><p>${s.varieties}</p>
+    <h3>Identification tips</h3><p>${s.id_tips}</p>
+  </div>`;
+}
+const refGrid = document.getElementById('refGrid');
+refGrid.innerHTML = SERIES.map(s =>
+  `<div class="choice" onclick="showRef('${s.id}')"><div class="title">${s.name}</div><div class="sub">${s.years}</div></div>`).join('');
+window.showRef = id => {
+  document.querySelectorAll('#refGrid .choice').forEach(c => c.classList.remove('selected'));
+  const s = SERIES.find(x => x.id === id);
+  document.getElementById('refDetail').innerHTML = seriesDetailHTML(s);
+  document.getElementById('refDetail').scrollIntoView({ behavior: 'smooth' });
+};
+
+// ==================== AUTHENTICITY ====================
+const authSel = document.getElementById('authSeries');
+authSel.innerHTML = SERIES.map(s => `<option value="${s.id}">${s.name} (${s.years})</option>`).join('');
+document.getElementById('authBtn').addEventListener('click', () => {
+  const s = SERIES.find(x => x.id === authSel.value);
+  const w = parseFloat(document.getElementById('authWeight').value);
+  const d = parseFloat(document.getElementById('authDiameter').value);
+  const magnet = document.getElementById('authMagnet').value;
+  const edge = document.getElementById('authEdge').value;
+  const ping = document.getElementById('authPing').value;
+  const checks = [];
+  let fails = 0, warns = 0;
+
+  if (!isNaN(w)) {
+    // allow slightly wider band than mint tolerance for circulated wear (up to ~1.5% loss)
+    const lo = s.specs.weight - s.specs.tol - s.specs.weight * 0.015;
+    const hi = s.specs.weight + s.specs.tol;
+    if (w >= lo && w <= hi) checks.push(['ok', `Weight ${w} g is within range for ${s.name} (spec ${s.specs.weight} g ±${s.specs.tol}, minus allowance for wear).`]);
+    else { fails++; checks.push(['bad', `Weight ${w} g is OUT of range — expected ${lo.toFixed(2)}–${hi.toFixed(2)} g. Strong counterfeit indicator.`]); }
+  }
+  if (!isNaN(d)) {
+    const lo = s.specs.diameter - s.specs.dtol, hi = s.specs.diameter + s.specs.dtol;
+    if (d >= lo && d <= hi) checks.push(['ok', `Diameter ${d} mm matches spec (${s.specs.diameter} mm).`]);
+    else { fails++; checks.push(['bad', `Diameter ${d} mm is off — expected ${lo}–${hi} mm.`]); }
+  }
+  if (magnet === 'yes') { fails++; checks.push(['bad', 'Magnetic attraction: silver is NOT magnetic. This is a counterfeit indicator.']); }
+  else if (magnet === 'no') checks.push(['ok', 'Not magnetic — consistent with silver.']);
+  if (edge) {
+    const expectLettered = s.specs.edge.toLowerCase().includes('lettered');
+    const expectPlainOk = s.specs.edge.toLowerCase().includes('plain');
+    if ((edge === 'lettered' && expectLettered) || (edge === 'reeded' && !expectLettered) || (edge === 'plain' && expectPlainOk))
+      checks.push(['ok', `Edge (${edge}) is correct for this series (${s.specs.edge}).`]);
+    else { fails++; checks.push(['bad', `Edge type "${edge}" is wrong — this series should be: ${s.specs.edge}.`]); }
+  }
+  if (ping === 'yes') checks.push(['ok', 'Long high-pitched ring is consistent with high-silver alloy.']);
+  else if (ping === 'no') { warns++; checks.push(['bad', 'A dull thud suggests base-metal core (note: holders/mounts can also deaden the ring).']); }
+
+  let verdict, color;
+  if (!checks.length) { verdict = 'Enter at least one measurement to evaluate.'; color = 'var(--muted)'; }
+  else if (fails > 0) { verdict = '⚠ LIKELY COUNTERFEIT — one or more measurements fail specification. Do not buy/sell; have it professionally examined.'; color = 'var(--red)'; }
+  else if (warns > 0) { verdict = 'Mostly consistent, but one soft warning — consider a specific-gravity test (silver dollar alloy ≈ 10.34) or professional grading.'; color = 'var(--gold)'; }
+  else { verdict = '✔ Consistent with a genuine ' + s.name + '. For valuable dates, professional certification (PCGS/NGC) is still recommended — good fakes can pass basic tests.'; color = 'var(--green)'; }
+
+  document.getElementById('authOut').innerHTML =
+    checks.map(c => `<p style="margin-top:8px"><span class="badge ${c[0]}">${c[0] === 'ok' ? 'PASS' : 'FAIL'}</span> ${c[1]}</p>`).join('') +
+    `<div class="verdict" style="color:${color}">${verdict}</div>`;
+});
+
+// ==================== PHOTO AI ====================
+const imgs = { obv: null, rev: null };
+function wireDrop(dropId, fileId, key) {
+  const drop = document.getElementById(dropId), file = document.getElementById(fileId);
+  drop.addEventListener('click', () => file.click());
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+  drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); if (e.dataTransfer.files[0]) load(e.dataTransfer.files[0]); });
+  file.addEventListener('change', () => { if (file.files[0]) load(file.files[0]); });
+  function load(f) {
+    const r = new FileReader();
+    r.onload = () => {
+      // downscale to keep request small
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        const scale = Math.min(1, 1100 / Math.max(img.width, img.height));
+        c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        const dataUrl = c.toDataURL('image/jpeg', 0.88);
+        imgs[key] = dataUrl.split(',')[1];
+        drop.innerHTML = `<img src="${dataUrl}">`;
+        updateAnalyzeBtn();
+      };
+      img.src = r.result;
+    };
+    r.readAsDataURL(f);
+  }
+}
+wireDrop('dropObv', 'fileObv', 'obv');
+wireDrop('dropRev', 'fileRev', 'rev');
+const keyInput = document.getElementById('apiKey');
+keyInput.value = localStorage.getItem('sd_api_key') || '';
+keyInput.addEventListener('input', () => { localStorage.setItem('sd_api_key', keyInput.value); updateAnalyzeBtn(); });
+function updateAnalyzeBtn() {
+  document.getElementById('analyzeBtn').disabled = !(imgs.obv && keyInput.value.trim());
+}
+updateAnalyzeBtn();
+
+document.getElementById('analyzeBtn').addEventListener('click', async () => {
+  const out = document.getElementById('aiOut');
+  out.innerHTML = '<p class="muted" style="margin-top:12px">Analyzing… (typically 5–15 seconds)</p>';
+  const content = [];
+  content.push({ type: 'text', text: 'Obverse photo:' });
+  content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imgs.obv } });
+  if (imgs.rev) {
+    content.push({ type: 'text', text: 'Reverse photo:' });
+    content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imgs.rev } });
+  }
+  content.push({ type: 'text', text:
+`You are an expert numismatist specializing in U.S. silver dollars. Identify this coin as precisely as possible. Report:
+1. Series (e.g. Morgan, Peace, Trade, Seated Liberty, Draped Bust, Flowing Hair, Eisenhower, American Silver Eagle) — or state if it is not a U.S. silver dollar.
+2. Date and mint mark if legible (Morgan mint mark: reverse below wreath bow; Peace: reverse lower left below ONE).
+3. Approximate grade on the Sheldon scale (e.g. VG-8, XF-40, MS-63) with reasoning about wear points.
+4. Whether it is a key/semi-key date and rough retail value range.
+5. Any red flags for counterfeiting or cleaning visible in the photo.
+Be precise; if the image is unclear about the date or mint mark, say exactly what additional photo would resolve it. Use plain text, no markdown.` });
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': keyInput.value.trim(),
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-5',
+        max_tokens: 1200,
+        messages: [{ role: 'user', content }]
+      })
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error?.message || resp.statusText);
+    out.innerHTML = `<pre class="airesult">${(data.content?.[0]?.text || 'No response').replace(/</g, '&lt;')}</pre>
+      <p class="muted">AI identification is an aid, not a certification. Verify with the wizard, the authenticity checker, and — for valuable coins — professional grading.</p>`;
+  } catch (e) {
+    out.innerHTML = `<p style="color:var(--red);margin-top:12px">Error: ${String(e.message).replace(/</g,'&lt;')}</p>
+      <p class="muted">Check your API key and network. You can still identify the coin with the "Identify My Coin" wizard — no key needed.</p>`;
+  }
+});
+</script>
+</body>
+</html>
